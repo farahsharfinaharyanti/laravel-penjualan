@@ -8,18 +8,33 @@ use Illuminate\Validation\Rule;
 
 class PenjualanController extends Controller
 {
-    public function index()
-    {
-        $penjualan = Penjualan::query()
-            ->orderByDesc('tanggal')
-            ->orderByDesc('id')
-            ->get();
+   public function index(Request $request)
+{
+    $query = Penjualan::query();
 
-        $totalOmzet = Penjualan::where('status', 'Selesai')->sum('total');
+    if ($request->filled('search')) {
+        $search = $request->search;
 
-        return view('penjualan.index', compact('penjualan', 'totalOmzet'));
+        $query->where(function ($q) use ($search) {
+            $q->where('kode_transaksi', 'like', "%{$search}%")
+              ->orWhere('nama_pelanggan', 'like', "%{$search}%")
+              ->orWhere('nama_produk', 'like', "%{$search}%");
+        });
     }
 
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+
+    $penjualan = $query
+        ->orderByDesc('tanggal')
+        ->orderByDesc('id')
+        ->get();
+
+    $totalOmzet = Penjualan::where('status', 'Selesai')->sum('total');
+
+    return view('penjualan.index', compact('penjualan', 'totalOmzet'));
+}
     public function create()
     {
         return view('penjualan.create');
